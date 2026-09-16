@@ -34,7 +34,34 @@ app.get('/api/menu', async (req, res) => {
     }
 });
 
-// Endpoint API: Menerima Pesanan Baru
+// Endpoint API: Menerima Pesanan Baru (CHECKOUT)
+app.post('/api/checkout', async (req, res) => {
+    const { keranjang, total_harga } = req.body;
+
+    try {
+        // 1. Simpan nota utama dulu untuk dapat ID Pesanan-nya
+        const notaBaru = await pool.query(
+            'INSERT INTO pesanan (total_harga) VALUES ($1) RETURNING id',
+            [total_harga]
+        );
+        const idPesanan = notaBaru.rows[0].id;
+
+        // 2. Simpan rincian donat-donatnya ke detail_pesanan
+        for (let item of keranjang) {
+            await pool.query(
+                'INSERT INTO detail_pesanan (id_pesanan, id_donat, jumlah, subtotal) VALUES ($1, $2, $3, $4)',
+                [idPesanan, item.id, item.jumlah, item.harga * item.jumlah]
+            );
+        }
+
+        // 3. Beri tahu React bahwa semuanya sukses!
+        res.status(201).json({ message: 'Pesanan berhasil dicatat!', id_nota: idPesanan });
+    } catch (err) {
+        console.error("ERROR SAAT CHECKOUT:", err.message); 
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Endpoint API: Mengambil Data Riwayat Pesanan
 app.get('/api/riwayat', async (req, res) => {
     try {
@@ -49,9 +76,9 @@ app.get('/api/riwayat', async (req, res) => {
             // Lakukan pencarian nama donat dengan menggabungkan tabel detail_pesanan dan menu_donat
             const rincian = await pool.query(
                 `SELECT md.nama, dp.jumlah, dp.subtotal 
-                FROM detail_pesanan dp
-                JOIN menu_donat md ON dp.id_donat = md.id
-                WHERE dp.id_pesanan = $1`,
+                 FROM detail_pesanan dp
+                 JOIN menu_donat md ON dp.id_donat = md.id
+                 WHERE dp.id_pesanan = $1`,
                 [pesananId]
             );
             // Masukkan hasil rincian ke dalam objek pesanan utama
