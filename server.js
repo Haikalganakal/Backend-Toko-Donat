@@ -33,11 +33,12 @@ app.get('/api/menu', async (req, res) => {
 
 // Endpoint API: Menerima Pesanan Baru (CHECKOUT)
 app.post('/api/checkout', async (req, res) => {
-    const { keranjang, total_harga } = req.body;
+    const { keranjang, total_harga, nama_pelanggan, no_wa, tipe_pesanan, alamat_pengiriman } = req.body;
     try {
         const notaBaru = await pool.query(
-            'INSERT INTO pesanan (total_harga) VALUES ($1) RETURNING id',
-            [total_harga]
+            `INSERT INTO pesanan 
+            (total_harga, nama_pelanggan, no_wa, tipe_pesanan, alamat_pengiriman) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [total_harga, nama_pelanggan, no_wa, tipe_pesanan, alamat_pengiriman]
         );
         const idPesanan = notaBaru.rows[0].id;
         for (let item of keranjang) {
