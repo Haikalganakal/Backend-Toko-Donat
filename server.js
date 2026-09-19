@@ -92,6 +92,23 @@ app.put('/api/pesanan/:id', async (req, res) => {
     }
 });
 
+app.post('/api/login', async (req, res) => {
+    const {username,  password} = req.body;
+    try {
+        const result = await pool.query (
+            'SELECT * FROM admin WHERE username = $1 AND password = $2',
+            [username, password]
+        );
+        if (result.rows.length > 0) {
+            res.json({success: true, message: 'Login berhasil!'});
+        } else
+            res.status(401).json({success: false, message: 'Usernama atau Password salah!'});
+    } catch (err) {
+        console.error("Error saat login:", err);
+        res.status(500).json({error: err.message});
+    }
+});
+
 // Menyalakan server
 const PORT = 5000;
 app.listen(PORT, () => {
