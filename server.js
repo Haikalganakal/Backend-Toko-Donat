@@ -38,11 +38,11 @@ app.get('/api/menu', async (req, res) => {
 
 // Endpoint API: Tambah Menu Baru (CREATE)
 app.post('/api/menu', async (req, res) => {
-    const { nama_donat, harga, stok, gambar } = req.body;
+    const { nama_donat, harga, stok, gambar, kategori } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO menu_donat (nama_donat, harga, stok, gambar) VALUES ($1, $2, $3, $4) RETURNING *',
-            [nama_donat, harga, stok, gambar]
+            'INSERT INTO menu_donat (nama_donat, harga, stok, gambar, kategori) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [nama_donat, harga, stok, gambar, kategori || 'Semua']
         );
         res.status(201).json({ message: 'Menu berhasil ditambahkan', data: result.rows[0] });
     } catch (err) {
@@ -52,29 +52,33 @@ app.post('/api/menu', async (req, res) => {
 });
 
 // Endpoint API: Edit Menu (UPDATE)
-app.put('/api/menu/:id', async (req, res) => {
-    const { id } = req.params;
-    const { nama_donat, harga, stok, gambar } = req.body;
+// UNTUK TAMBAH DATA (POST)
+app.post('/api/menu', async (req, res) => {
+    const { nama_donat, harga, stok, gambar, kategori } = req.body; 
     try {
         const result = await pool.query(
-            'UPDATE menu_donat SET nama_donat = $1, harga = $2, stok = $3, gambar = $4 WHERE id = $5 RETURNING *',
-            [nama_donat, harga, stok, gambar, id]
+            'INSERT INTO menu_donat (nama_donat, harga, stok, gambar, kategori) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [nama_donat, harga, stok, gambar, kategori || 'Semua']
         );
-        res.json({ message: 'Menu berhasil diupdate', data: result.rows[0] });
+        res.status(201).json(result.rows[0]);
     } catch (err) {
-        console.error("Gagal mengupdate menu:", err);
+        console.error("Gagal menambah menu:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Endpoint API: Hapus Menu (DELETE)
-app.delete('/api/menu/:id', async (req, res) => {
+// UNTUK EDIT DATA (PUT)
+app.put('/api/menu/:id', async (req, res) => {
     const { id } = req.params;
+    const { nama_donat, harga, stok, gambar, kategori } = req.body;
     try {
-        await pool.query('DELETE FROM menu_donat WHERE id = $1', [id]);
-        res.json({ message: 'Menu berhasil dihapus' });
+        const result = await pool.query(
+            'UPDATE menu_donat SET nama_donat = $1, harga = $2, stok = $3, gambar = $4, kategori = $5 WHERE id = $6 RETURNING *',
+            [nama_donat, harga, stok, gambar, kategori || 'Semua', id]
+        );
+        res.json(result.rows[0]);
     } catch (err) {
-        console.error("Gagal menghapus menu:", err);
+        console.error("Gagal mengupdate menu:", err);
         res.status(500).json({ error: err.message });
     }
 });
