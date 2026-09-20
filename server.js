@@ -177,6 +177,22 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// Endpoint API: Hapus Semua Pesanan Selesai
+app.delete('/api/pesanan/selesai', async (req, res) => {
+    try {
+        // Hapus detail pesanan terlebih dahulu untuk menghindari error Foreign Key
+        await pool.query("DELETE FROM detail_pesanan WHERE id_pesanan IN (SELECT id FROM pesanan WHERE status_pesanan = 'Selesai')");
+        
+        // Setelah detailnya terhapus, baru hapus nota pesanannya
+        await pool.query("DELETE FROM pesanan WHERE status_pesanan = 'Selesai'");
+        
+        res.json({ message: 'Semua pesanan selesai berhasil dibersihkan!' });
+    } catch (err) {
+        console.error("Gagal membersihkan pesanan selesai:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Menyalakan server
 const PORT = 5000;
 app.listen(PORT, () => {
